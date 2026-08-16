@@ -1,0 +1,13 @@
+modules = ["python-3.11"]
+
+run = ["python", "backend/server.py"]
+
+[deployment]
+run = ["python", "backend/server.py"]
+deploymentTarget = "cloudrun"
+
+[packager]
+language = "python"
+
+[nix]
+channel = "stable-24_05"
