@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { ImagePlus, Loader2, Upload } from "lucide-react";
 
 import { api, apiUpload, assetUrl } from "@/lib/api";
-import type { Category, Product } from "@/lib/types";
+import type { Category, Product, Supplier } from "@/lib/types";
 
 export type ProductFormData = {
   name: string;
@@ -13,6 +13,7 @@ export type ProductFormData = {
   stock: number;
   image_url: string;
   category_id: number | null;
+  supplier_id: number | null;
   featured: boolean;
 };
 
@@ -32,6 +33,7 @@ export function ProductForm({
   busy: boolean;
 }) {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -42,11 +44,15 @@ export function ProductForm({
     stock: initial ? String(initial.stock) : "",
     image_url: initial?.image_url ?? "",
     category_id: initial?.category_id ? String(initial.category_id) : "",
+    supplier_id: initial?.supplier_id ? String(initial.supplier_id) : "",
     featured: initial?.featured ?? false,
   });
 
   useEffect(() => {
     api<Category[]>("/api/categories").then(setCategories).catch(() => {});
+    api<Supplier[]>("/api/suppliers", { auth: true })
+      .then(setSuppliers)
+      .catch(() => {});
   }, []);
 
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
@@ -79,6 +85,7 @@ export function ProductForm({
       stock: parseInt(form.stock || "0", 10),
       image_url: form.image_url,
       category_id: form.category_id ? Number(form.category_id) : null,
+      supplier_id: form.supplier_id ? Number(form.supplier_id) : null,
       featured: form.featured,
     });
   };
@@ -109,7 +116,7 @@ export function ProductForm({
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
-          <label className={labelClass}>Price (USD) *</label>
+          <label className={labelClass}>Price (Rs) *</label>
           <input
             required
             type="number"
@@ -117,7 +124,7 @@ export function ProductForm({
             step="0.01"
             value={form.price}
             onChange={set("price")}
-            placeholder="99.99"
+            placeholder="999"
             className={inputClass}
           />
         </div>
@@ -148,6 +155,25 @@ export function ProductForm({
               </option>
             ))}
           </select>
+        </div>
+        <div className="sm:col-span-3">
+          <label className={labelClass}>Supplier</label>
+          <select
+            value={form.supplier_id}
+            onChange={set("supplier_id")}
+            className={inputClass}
+          >
+            <option value="">No supplier assigned</option>
+            {suppliers.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+                {s.contact_name ? ` — ${s.contact_name}` : ""}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-slate-400">
+            Used for returns &amp; supplier enquiries.
+          </p>
         </div>
       </div>
 

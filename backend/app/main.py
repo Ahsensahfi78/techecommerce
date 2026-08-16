@@ -40,16 +40,34 @@ def _run_lightweight_migrations() -> None:
 
 _run_lightweight_migrations()
 
+
+def _seed_if_empty() -> None:
+    """Seed demo data on first boot so a fresh (ephemeral) database is usable."""
+    from .models import Product
+    from .database import SessionLocal
+
+    with SessionLocal() as db:
+        if db.query(Product).count() == 0:
+            from seed import seed
+
+            seed()
+
+
+_seed_if_empty()
+
 app = FastAPI(
     title="TechMos API",
     description="E-commerce backend with full CRUD for products, categories, orders, users, coupons, wishlist and reviews.",
     version="2.1.0",
 )
 
+cors_origins = os.getenv("CORS_ORIGINS", "*")
+allow_origins = [o.strip() for o in cors_origins.split(",") if o.strip()] or ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
-    allow_credentials=True,
+    allow_origins=allow_origins,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

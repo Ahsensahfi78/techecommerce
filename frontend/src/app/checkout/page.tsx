@@ -9,9 +9,18 @@ import { api, getToken } from "@/lib/api";
 import { formatPrice } from "@/lib/format";
 import { ApiError } from "@/lib/api";
 import type { CouponResult } from "@/lib/types";
+import {
+  Alert,
+  Badge,
+  Breadcrumb,
+  Button,
+  Field,
+  Input,
+  buttonStyles,
+} from "@/components/ui";
 
-const inputClass =
-  "w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100";
+const FREE_SHIPPING_THRESHOLD = 999;
+const SHIPPING_FEE = 49;
 
 export default function CheckoutPage() {
   const { items, subtotal, clearCart } = useCart();
@@ -34,7 +43,8 @@ export default function CheckoutPage() {
   const [couponError, setCouponError] = useState<string | null>(null);
   const [validating, setValidating] = useState(false);
 
-  const shipping = subtotal >= 50 || subtotal === 0 ? 0 : 5.99;
+  const shipping =
+    subtotal >= FREE_SHIPPING_THRESHOLD || subtotal === 0 ? 0 : SHIPPING_FEE;
   const discount = coupon?.discount ?? 0;
   const total = subtotal + shipping - discount;
 
@@ -99,29 +109,25 @@ export default function CheckoutPage() {
 
   if (placed) {
     return (
-      <div className="mx-auto max-w-xl px-4 py-20 text-center">
+      <div className="mx-auto max-w-xl px-4 py-20 text-center animate-fade-in">
         <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-emerald-100">
           <CheckCircle2 className="h-9 w-9 text-emerald-600" />
         </span>
-        <h1 className="mt-6 text-2xl font-bold text-slate-900">Order placed!</h1>
+        <h1 className="mt-6 text-2xl font-bold tracking-tight text-slate-900">
+          Order placed!
+        </h1>
         <p className="mt-2 text-sm text-slate-500">
           Thanks for shopping with us. Your order{" "}
           <span className="font-semibold text-slate-900">#{placed}</span> has
           been received and is being prepared.
         </p>
         <div className="mt-8 flex justify-center gap-3">
-          <button
-            onClick={() => router.push(`/orders/${placed}`)}
-            className="rounded-full bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white hover:bg-indigo-600"
-          >
+          <Button onClick={() => router.push(`/orders/${placed}`)}>
             Track my order
-          </button>
-          <button
-            onClick={() => router.push("/products")}
-            className="rounded-full border border-slate-300 px-6 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          >
+          </Button>
+          <Button variant="outline" onClick={() => router.push("/products")}>
             Continue shopping
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -130,121 +136,112 @@ export default function CheckoutPage() {
   if (items.length === 0) {
     return (
       <div className="mx-auto max-w-xl px-4 py-20 text-center">
-        <h1 className="text-2xl font-bold text-slate-900">Nothing to check out</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          Nothing to check out
+        </h1>
         <p className="mt-2 text-sm text-slate-500">
           Your cart is empty. Add some products first.
         </p>
-        <button
-          onClick={() => router.push("/products")}
-          className="mt-6 rounded-full bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
-        >
+        <Button onClick={() => router.push("/products")} className="mt-6">
           Browse products
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-      <button
-        onClick={() => router.back()}
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-indigo-600"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to cart
-      </button>
-      <h1 className="mt-3 text-2xl font-bold text-slate-900">Checkout</h1>
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Cart", href: "/cart" }, { label: "Checkout" }]} />
+
+      <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Checkout
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Enter your delivery details to place the order.
+          </p>
+        </div>
+        <button
+          onClick={() => router.back()}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-indigo-600"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to cart
+        </button>
+      </div>
 
       <form
         onSubmit={submit}
         className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]"
       >
         {/* Shipping form */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6">
-          <h2 className="text-base font-bold text-slate-900">Shipping details</h2>
+        <div className="h-fit rounded-2xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-900/[0.02]">
+          <h2 className="text-base font-bold text-slate-900">
+            Shipping details
+          </h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                Full name *
-              </label>
-              <input
+            <Field label="Full name" required className="sm:col-span-2">
+              <Input
                 required
                 value={form.customer_name}
                 onChange={set("customer_name")}
                 placeholder="John Doe"
-                className={inputClass}
               />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                Email *
-              </label>
-              <input
+            </Field>
+            <Field label="Email" required>
+              <Input
                 required
                 type="email"
                 value={form.customer_email}
                 onChange={set("customer_email")}
                 placeholder="john@example.com"
-                className={inputClass}
               />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                Phone
-              </label>
-              <input
+            </Field>
+            <Field label="Phone">
+              <Input
                 value={form.customer_phone}
                 onChange={set("customer_phone")}
-                placeholder="+1 555 000 1234"
-                className={inputClass}
+                placeholder="+91 90000 00000"
               />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                Street address *
-              </label>
-              <input
+            </Field>
+            <Field label="Street address" required className="sm:col-span-2">
+              <Input
                 required
                 value={form.shipping_address}
                 onChange={set("shipping_address")}
                 placeholder="123 Market Street, Apt 4"
-                className={inputClass}
               />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                City
-              </label>
-              <input
+            </Field>
+            <Field label="City">
+              <Input
                 value={form.city}
                 onChange={set("city")}
-                placeholder="New York"
-                className={inputClass}
+                placeholder="Bengaluru"
               />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                Postal code
-              </label>
-              <input
+            </Field>
+            <Field label="Postal code">
+              <Input
                 value={form.postal_code}
                 onChange={set("postal_code")}
-                placeholder="10001"
-                className={inputClass}
+                placeholder="560001"
               />
-            </div>
+            </Field>
           </div>
         </div>
 
         {/* Summary */}
-        <div className="h-fit rounded-2xl border border-slate-200 bg-white p-6">
-          <h2 className="text-base font-bold text-slate-900">Order summary</h2>
+        <div className="h-fit rounded-2xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-900/[0.02]">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-slate-900">Order summary</h2>
+            <Badge text={`${items.length} items`} tone="primary" />
+          </div>
           <div className="mt-4 space-y-3">
             {items.map((i) => (
-              <div key={i.product_id} className="flex justify-between text-sm">
-                <span className="text-slate-600">
+              <div key={i.product_id} className="flex justify-between gap-3 text-sm">
+                <span className="min-w-0 truncate text-slate-600">
                   {i.name} × {i.quantity}
                 </span>
-                <span className="font-medium text-slate-900">
+                <span className="shrink-0 font-medium text-slate-900">
                   {formatPrice(i.price * i.quantity)}
                 </span>
               </div>
@@ -315,7 +312,7 @@ export default function CheckoutPage() {
                       }
                     }}
                     placeholder="e.g. WELCOME10"
-                    className={`${inputClass} uppercase`}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm uppercase text-slate-900 outline-none transition placeholder:normal-case placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                   />
                   <button
                     type="button"
@@ -341,24 +338,21 @@ export default function CheckoutPage() {
           </div>
 
           {error && (
-            <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
-              {error}
+            <div className="mt-4">
+              <Alert tone="error">{error}</Alert>
             </div>
           )}
 
-          <button
+          <Button
             type="submit"
-            disabled={submitting}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-600 disabled:opacity-50"
+            size="lg"
+            fullWidth
+            loading={submitting}
+            loadingLabel="Placing order…"
+            className="mt-6"
           >
-            {submitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Placing order…
-              </>
-            ) : (
-              <>Place order · {formatPrice(total)}</>
-            )}
-          </button>
+            Place order · {formatPrice(total)}
+          </Button>
           <p className="mt-3 text-center text-xs text-slate-400">
             This is a demo checkout — no real payment is taken.
           </p>

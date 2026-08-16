@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Database + uploads (local data, regenerated/seeded on deploy)
+*.db
+backend/uploads/
+backend/app/uploads/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+build/
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Misc
+.DS_Store
+*.log

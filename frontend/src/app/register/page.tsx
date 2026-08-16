@@ -3,13 +3,11 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { ShoppingBag, Sparkles } from "lucide-react";
 
 import { api, ApiError, setSession } from "@/lib/api";
 import type { User } from "@/lib/types";
-
-const inputClass =
-  "w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100";
+import { Alert, Button, Field, Input } from "@/components/ui";
 
 function RegisterForm() {
   const router = useRouter();
@@ -58,80 +56,100 @@ function RegisterForm() {
   };
 
   return (
-    <div className="mx-auto flex max-w-md flex-col px-4 py-16">
-      <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-bold text-slate-900">Create your account</h1>
+    <div className="mx-auto grid max-w-4xl px-4 py-16 lg:grid-cols-2">
+      {/* Brand panel */}
+      <div className="hidden flex-col justify-between overflow-hidden rounded-l-3xl bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 p-10 text-white lg:flex">
+        <Link href="/" className="flex items-center gap-2">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/15 backdrop-blur">
+            <ShoppingBag className="h-5 w-5" />
+          </span>
+          <span className="text-lg font-bold tracking-tight">
+            Tech<span className="text-indigo-200">Mos</span>
+          </span>
+        </Link>
+        <div>
+          <h2 className="text-2xl font-bold leading-snug">
+            Join thousands of smart shoppers.
+          </h2>
+          <p className="mt-3 text-sm text-indigo-100">
+            Create a free account and unlock a faster, more personal shopping
+            experience.
+          </p>
+          <ul className="mt-6 space-y-2 text-sm text-indigo-100">
+            <li className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" /> Save wishlists &amp; reorder
+            </li>
+            <li className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" /> Track orders in real time
+            </li>
+            <li className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" /> Exclusive member deals
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      {/* Form */}
+      <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm shadow-slate-900/[0.02] lg:rounded-l-none">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          Create your account
+        </h1>
         <p className="mt-1 text-sm text-slate-500">
           Join TechMos and start shopping in minutes.
         </p>
 
         <form onSubmit={submit} className="mt-6 space-y-4">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Full name
-            </label>
-            <input
+          <Field label="Full name" required>
+            <Input
               required
               value={form.name}
               onChange={set("name")}
               placeholder="John Doe"
-              className={inputClass}
+              autoComplete="name"
             />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Email
-            </label>
-            <input
+          </Field>
+          <Field label="Email" required>
+            <Input
               required
               type="email"
               value={form.email}
               onChange={set("email")}
               placeholder="you@example.com"
-              className={inputClass}
+              autoComplete="email"
             />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Password
-            </label>
-            <input
+          </Field>
+          <Field label="Password" required hint="At least 6 characters">
+            <Input
               required
               type="password"
               value={form.password}
               onChange={set("password")}
               placeholder="At least 6 characters"
-              className={inputClass}
+              autoComplete="new-password"
             />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
-              Confirm password
-            </label>
-            <input
+          </Field>
+          <Field label="Confirm password" required>
+            <Input
               required
               type="password"
               value={form.confirm}
               onChange={set("confirm")}
               placeholder="Re-enter password"
-              className={inputClass}
+              autoComplete="new-password"
             />
-          </div>
+          </Field>
 
-          {error && (
-            <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
-              {error}
-            </div>
-          )}
+          {error && <Alert tone="error">{error}</Alert>}
 
-          <button
+          <Button
             type="submit"
-            disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-600 disabled:opacity-50"
+            fullWidth
+            size="lg"
+            loading={loading}
+            loadingLabel="Creating account…"
           >
-            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             Create account
-          </button>
+          </Button>
         </form>
 
         <p className="mt-6 text-center text-sm text-slate-500">

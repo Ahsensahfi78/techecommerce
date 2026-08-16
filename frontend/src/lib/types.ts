@@ -22,6 +22,8 @@ export interface Product {
   image_url: string;
   category_id: number | null;
   category_name: string | null;
+  supplier_id: number | null;
+  supplier_name: string | null;
   featured: boolean;
   avg_rating: number | null;
   review_count: number;
@@ -123,4 +125,64 @@ export interface CartItem {
   image_url: string;
   stock: number;
   quantity: number;
+}
+
+export interface Supplier {
+  id: number;
+  name: string;
+  contact_name: string;
+  email: string;
+  phone: string;
+  address: string;
+  notes: string;
+  created_at: string;
+  product_count: number;
+}
+
+export interface ReturnItem {
+  id: number;
+  return_id: number;
+  order_item_id: number | null;
+  product_id: number | null;
+  product_name: string;
+  quantity: number;
+  price: number;
+}
+
+export type ReturnStatus = "requested" | "approved" | "rejected" | "refunded" | "completed";
+
+export interface SalesReturn {
+  id: number;
+  return_number: string;
+  order_id: number;
+  user_id: number | null;
+  reason: string;
+  status: ReturnStatus;
+  refund_amount: number;
+  supplier_id: number | null;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+  items: ReturnItem[];
+  order: Order | null;
+  supplier: Supplier | null;
+  user_name: string | null;
+}
+
+export type EnquiryCategory = "general" | "order" | "return" | "supplier";
+export type EnquiryStatus = "open" | "answered" | "closed";
+
+export interface Enquiry {
+  id: number;
+  user_id: number | null;
+  subject: string;
+  message: string;
+  category: EnquiryCategory;
+  reference_type: string | null;
+  reference_id: number | null;
+  supplier_id: number | null;
+  status: EnquiryStatus;
+  created_at: string;
+  user_name: string | null;
+  supplier: Supplier | null;
 }

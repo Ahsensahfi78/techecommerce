@@ -6,7 +6,13 @@ import { useEffect, useState } from "react";
 import { Heart } from "lucide-react";
 
 import { ProductCard } from "@/components/ProductCard";
-import { EmptyState, ErrorState, Spinner } from "@/components/ui";
+import {
+  Breadcrumb,
+  Button,
+  EmptyState,
+  ErrorState,
+  SkeletonProductGrid,
+} from "@/components/ui";
 import { api, getToken, getUser } from "@/lib/api";
 import type { Product, User } from "@/lib/types";
 
@@ -27,28 +33,43 @@ export default function WishlistPage() {
   }, [router]);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900">
-        <Heart className="h-6 w-6 fill-rose-500 text-rose-500" />
-        My wishlist
-      </h1>
-      <p className="mt-1 text-sm text-slate-500">
-        Products you&apos;ve saved for later.
-      </p>
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <Breadcrumb
+        items={[{ label: "Home", href: "/" }, { label: "Wishlist" }]}
+      />
 
-      {error && <div className="mt-6"><ErrorState message={error} /></div>}
-      {!error && !products && <Spinner />}
+      <div className="mt-4 flex items-center gap-3">
+        <span className="grid h-11 w-11 place-items-center rounded-2xl bg-rose-50 text-rose-500">
+          <Heart className="h-6 w-6 fill-current" />
+        </span>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            My wishlist
+          </h1>
+          <p className="mt-0.5 text-sm text-slate-500">
+            Products you&apos;ve saved for later.
+          </p>
+        </div>
+      </div>
+
+      {error && (
+        <div className="mt-6">
+          <ErrorState message={error} />
+        </div>
+      )}
+      {!error && !products && (
+        <div className="mt-8">
+          <SkeletonProductGrid count={8} />
+        </div>
+      )}
       {!error && products && products.length === 0 && (
         <div className="mt-6">
           <EmptyState
             title="Your wishlist is empty"
             subtitle="Tap the heart on any product to save it here."
             action={
-              <Link
-                href="/products"
-                className="mt-2 inline-block rounded-full bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
-              >
-                Browse products
+              <Link href="/products">
+                <Button className="mt-2">Browse products</Button>
               </Link>
             }
           />

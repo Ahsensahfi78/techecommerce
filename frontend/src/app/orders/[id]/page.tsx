@@ -3,19 +3,28 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Check, PackageSearch, X } from "lucide-react";
+import { ArrowLeft, Check, Headset, PackageSearch, RotateCcw, X } from "lucide-react";
 
-import { ErrorState, Spinner } from "@/components/ui";
-import { api, getToken, getUser } from "@/lib/api";
 import {
-  formatDateTime,
-  formatPrice,
-  ORDER_STATUSES,
-  STATUS_STYLES,
-} from "@/lib/format";
+  Badge,
+  Breadcrumb,
+  ErrorState,
+  SkeletonProductGrid,
+  type BadgeTone,
+} from "@/components/ui";
+import { api, getToken, getUser } from "@/lib/api";
+import { formatDateTime, formatPrice, ORDER_STATUSES } from "@/lib/format";
 import type { Order, User } from "@/lib/types";
 
 const TRACKING_STEPS = ORDER_STATUSES.filter((s) => s !== "cancelled");
+
+const STATUS_TONES: Record<string, BadgeTone> = {
+  pending: "warning",
+  paid: "info",
+  shipped: "primary",
+  delivered: "success",
+  cancelled: "error",
+};
 
 export default function OrderTrackingPage() {
   const params = useParams<{ id: string }>();
@@ -38,7 +47,13 @@ export default function OrderTrackingPage() {
       .catch((e) => setError(e.message));
   }, [params.id, router]);
 
-  if (!user) return <Spinner />;
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+        <SkeletonProductGrid count={3} />
+      </div>
+    );
+  }
 
   const cancelled = order?.status === "cancelled";
   const currentIndex = order
@@ -46,34 +61,53 @@ export default function OrderTrackingPage() {
     : -1;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
-      <Link
-        href="/account"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-indigo-600"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to my orders
-      </Link>
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+      <Breadcrumb
+        items={[
+          { label: "Home", href: "/" },
+          { label: "My orders", href: "/account" },
+          { label: `Order #${params.id}` },
+        ]}
+      />
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-slate-900">
-          Order tracking <span className="text-slate-400">#{params.id}</span>
-        </h1>
-        {order && (
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-semibold uppercase ring-1 ${STATUS_STYLES[order.status] ?? STATUS_STYLES.pending}`}
+        <div className="flex items-center gap-3">
+          <Link
+            href="/account"
+            className="grid h-10 w-10 place-items-center rounded-full border border-slate-200 text-slate-500 transition-colors hover:bg-slate-50"
+            aria-label="Back to my orders"
           >
-            {order.status}
-          </span>
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+              Order tracking <span className="text-slate-400">#{params.id}</span>
+            </h1>
+            <p className="mt-0.5 text-sm text-slate-500">
+              Follow the progress of your delivery.
+            </p>
+          </div>
+        </div>
+        {order && (
+          <Badge text={order.status} tone={STATUS_TONES[order.status] ?? "neutral"} />
         )}
       </div>
 
-      {error && !order && <ErrorState message={error} />}
-      {!error && !order && <Spinner />}
+      {error && !order && (
+        <div className="mt-6">
+          <ErrorState message={error} />
+        </div>
+      )}
+      {!error && !order && (
+        <div className="mt-6">
+          <SkeletonProductGrid count={2} />
+        </div>
+      )}
 
       {order && (
         <>
           {/* Tracking timeline */}
-          <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6">
+          <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-900/[0.02]">
             {cancelled ? (
               <div className="flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-rose-100">
@@ -114,7 +148,7 @@ export default function OrderTrackingPage() {
                         )}
                       </span>
                       <span
-                        className={`text-xs font-semibold capitalize ${
+                        className={`text-center text-xs font-semibold capitalize ${
                           done ? "text-slate-900" : "text-slate-400"
                         }`}
                       >
@@ -128,7 +162,7 @@ export default function OrderTrackingPage() {
           </div>
 
           {/* Items */}
-          <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6">
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-900/[0.02]">
             <h2 className="text-base font-bold text-slate-900">Items</h2>
             <ul className="mt-4 divide-y divide-slate-100">
               {order.items.map((item) => (
@@ -169,9 +203,7 @@ export default function OrderTrackingPage() {
               </div>
               {order.discount > 0 && (
                 <div className="flex justify-between">
-                  <dt className="text-emerald-600">
-                    Coupon {order.coupon_code}
-                  </dt>
+                  <dt className="text-emerald-600">Coupon {order.coupon_code}</dt>
                   <dd className="font-medium text-emerald-600">
                     −{formatPrice(order.discount)}
                   </dd>
@@ -187,8 +219,10 @@ export default function OrderTrackingPage() {
           </div>
 
           {/* Shipping info */}
-          <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6">
-            <h2 className="text-base font-bold text-slate-900">Shipping details</h2>
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-900/[0.02]">
+            <h2 className="text-base font-bold text-slate-900">
+              Shipping details
+            </h2>
             <div className="mt-3 grid gap-1 text-sm text-slate-600">
               <p>{order.customer_name}</p>
               <p>{order.shipping_address}</p>
@@ -200,9 +234,30 @@ export default function OrderTrackingPage() {
               {order.customer_phone && <p>{order.customer_phone}</p>}
             </div>
             <p className="mt-4 text-xs text-slate-400">
-              Placed {formatDateTime(order.created_at)} ·{" "}
-              {order.customer_email}
+              Placed {formatDateTime(order.created_at)} · {order.customer_email}
             </p>
+          </div>
+
+          {/* Support / returns */}
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <Link
+              href="/returns"
+              className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5 text-sm font-semibold text-slate-700 shadow-sm shadow-slate-900/[0.02] transition-colors hover:border-indigo-300 hover:text-indigo-700"
+            >
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
+                <RotateCcw className="h-5 w-5" />
+              </span>
+              Request a return or refund
+            </Link>
+            <Link
+              href="/contact"
+              className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5 text-sm font-semibold text-slate-700 shadow-sm shadow-slate-900/[0.02] transition-colors hover:border-indigo-300 hover:text-indigo-700"
+            >
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-50 text-indigo-600">
+                <Headset className="h-5 w-5" />
+              </span>
+              Get help with this order
+            </Link>
           </div>
         </>
       )}

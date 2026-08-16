@@ -7,6 +7,7 @@ import { ArrowLeft, MapPin, Trash2 } from "lucide-react";
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ErrorState, Spinner } from "@/components/ui";
+import { useToast } from "@/lib/toast-context";
 import { api, ApiError } from "@/lib/api";
 import {
   formatDateTime,
@@ -19,6 +20,7 @@ import type { Order } from "@/lib/types";
 export default function AdminOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const toast = useToast();
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -45,6 +47,7 @@ export default function AdminOrderDetailPage() {
         auth: true,
       });
       load();
+      toast.success(`Order marked as ${status}`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to update status");
     } finally {
@@ -56,6 +59,7 @@ export default function AdminOrderDetailPage() {
     setDeleting(true);
     try {
       await api(`/api/orders/${id}`, { method: "DELETE", auth: true });
+      toast.success("Order deleted");
       router.push("/admin/orders");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to delete order");

@@ -6,13 +6,15 @@ import { useEffect, useState } from "react";
 import { Plus, Pencil, Search, Trash2 } from "lucide-react";
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { EmptyState, ErrorState, Spinner } from "@/components/ui";
+import { Button, EmptyState, ErrorState, Skeleton, inputClass } from "@/components/ui";
+import { useToast } from "@/lib/toast-context";
 import { api, ApiError } from "@/lib/api";
 import { formatPrice } from "@/lib/format";
 import type { Product, ProductPage } from "@/lib/types";
 
 export default function AdminProductsPage() {
   const router = useRouter();
+  const toast = useToast();
   const [products, setProducts] = useState<Product[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -32,7 +34,8 @@ export default function AdminProductsPage() {
   const filtered = products?.filter(
     (p) =>
       p.name.toLowerCase().includes(search.toLowerCase()) ||
-      (p.category_name ?? "").toLowerCase().includes(search.toLowerCase())
+      (p.category_name ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (p.supplier_name ?? "").toLowerCase().includes(search.toLowerCase())
   );
 
   const doDelete = async () => {
@@ -41,9 +44,10 @@ export default function AdminProductsPage() {
     try {
       await api(`/api/products/${confirmId}`, { method: "DELETE", auth: true });
       setConfirmId(null);
+      toast.success("Product deleted");
       load();
     } catch (err) {
-      alert(err instanceof ApiError ? err.message : "Delete failed");
+      toast.error(err instanceof ApiError ? err.message : "Delete failed");
     } finally {
       setDeleting(false);
     }
@@ -58,11 +62,10 @@ export default function AdminProductsPage() {
             {filtered?.length ?? 0} of {products?.length ?? 0} products
           </p>
         </div>
-        <Link
-          href="/admin/products/new"
-          className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
-        >
-          <Plus className="h-4 w-4" /> Add product
+        <Link href="/admin/products/new">
+          <Button>
+            <Plus className="h-4 w-4" /> Add product
+          </Button>
         </Link>
       </div>
 
@@ -76,19 +79,26 @@ export default function AdminProductsPage() {
         />
       </div>
 
-      {error && <div className="mt-5"><ErrorState message={error} /></div>}
-      {!error && !products && <Spinner />}
+      {error && (
+        <div className="mt-5">
+          <ErrorState message={error} />
+        </div>
+      )}
+      {!error && !products && (
+        <div className="mt-5 space-y-3">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-16 rounded-2xl" />
+          ))}
+        </div>
+      )}
       {!error && products && filtered && filtered.length === 0 && (
         <div className="mt-5">
           <EmptyState
             title="No products found"
             subtitle="Add your first product to get started."
             action={
-              <Link
-                href="/admin/products/new"
-                className="mt-2 inline-block rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-              >
-                Add product
+              <Link href="/admin/products/new">
+                <Button className="mt-2">Add product</Button>
               </Link>
             }
           />
@@ -96,13 +106,14 @@ export default function AdminProductsPage() {
       )}
 
       {filtered && filtered.length > 0 && (
-        <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.02]">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-sm">
+            <table className="w-full min-w-[820px] text-left text-sm">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                   <th className="px-4 py-3 font-semibold">Product</th>
                   <th className="px-4 py-3 font-semibold">Category</th>
+                  <th className="px-4 py-3 font-semibold">Supplier</th>
                   <th className="px-4 py-3 font-semibold">Price</th>
                   <th className="px-4 py-3 font-semibold">Stock</th>
                   <th className="px-4 py-3 font-semibold">Status</th>
@@ -126,13 +137,18 @@ export default function AdminProductsPage() {
                             img
                           </div>
                         )}
-                        <span className="max-w-52 truncate font-semibold text-slate-900">
+                        <span className="max-w-48 truncate font-semibold text-slate-900">
                           {p.name}
                         </span>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-slate-600">
                       {p.category_name ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">
+                      {p.supplier_name ?? (
+                        <span className="text-slate-300">Unassigned</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 font-medium text-slate-900">
                       {formatPrice(p.price)}

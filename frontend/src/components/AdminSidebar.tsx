@@ -4,8 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Boxes,
+  Factory,
   LayoutDashboard,
+  MessageSquare,
   Package,
+  RotateCcw,
   ShoppingCart,
   Tag,
   Tags,
@@ -19,6 +22,9 @@ const NAV = [
   { href: "/admin/coupons", label: "Coupons", icon: Tag },
   { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/returns", label: "Returns", icon: RotateCcw },
+  { href: "/admin/enquiries", label: "Enquiries", icon: MessageSquare },
+  { href: "/admin/suppliers", label: "Suppliers", icon: Factory },
 ];
 
 export function AdminSidebar() {

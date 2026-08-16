@@ -5,6 +5,7 @@ import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { EmptyState, Spinner } from "@/components/ui";
+import { useToast } from "@/lib/toast-context";
 import { api, ApiError } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import type { Coupon } from "@/lib/types";
@@ -22,6 +23,7 @@ const EMPTY_FORM = {
 };
 
 export default function AdminCouponsPage() {
+  const toast = useToast();
   const [coupons, setCoupons] = useState<Coupon[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,6 +67,7 @@ export default function AdminCouponsPage() {
       });
       setForm({ ...EMPTY_FORM });
       load();
+      toast.success("Coupon created");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to create coupon");
     } finally {
@@ -105,6 +108,7 @@ export default function AdminCouponsPage() {
       });
       setEditingId(null);
       load();
+      toast.success("Coupon updated");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to update coupon");
     } finally {
@@ -120,6 +124,7 @@ export default function AdminCouponsPage() {
       await api(`/api/coupons/${confirmId}`, { method: "DELETE", auth: true });
       setConfirmId(null);
       load();
+      toast.success("Coupon deleted");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to delete coupon");
       setConfirmId(null);

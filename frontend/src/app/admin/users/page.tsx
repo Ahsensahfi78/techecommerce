@@ -5,6 +5,7 @@ import { Pencil, Trash2, X } from "lucide-react";
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Spinner, EmptyState } from "@/components/ui";
+import { useToast } from "@/lib/toast-context";
 import { api, ApiError } from "@/lib/api";
 import { formatDate, initials } from "@/lib/format";
 import type { User } from "@/lib/types";
@@ -13,6 +14,7 @@ const inputClass =
   "w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100";
 
 export default function AdminUsersPage() {
+  const toast = useToast();
   const [users, setUsers] = useState<User[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,6 +59,7 @@ export default function AdminUsersPage() {
       });
       setEditing(null);
       load();
+      toast.success("User updated");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to update user");
     } finally {
@@ -72,6 +75,7 @@ export default function AdminUsersPage() {
       await api(`/api/users/${confirmId}`, { method: "DELETE", auth: true });
       setConfirmId(null);
       load();
+      toast.success("User deleted");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to delete user");
       setConfirmId(null);

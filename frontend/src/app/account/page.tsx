@@ -3,18 +3,36 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LogOut } from "lucide-react";
+import { Heart, LayoutDashboard, LogOut, Package, Wallet } from "lucide-react";
 
-import { EmptyState, Spinner } from "@/components/ui";
+import {
+  Badge,
+  Breadcrumb,
+  Button,
+  EmptyState,
+  SkeletonProductGrid,
+  StatCard,
+  type BadgeTone,
+} from "@/components/ui";
 import { api, clearSession, getToken, getUser } from "@/lib/api";
-import { formatDateTime, formatPrice, initials, STATUS_STYLES } from "@/lib/format";
+import { formatDateTime, formatPrice, initials } from "@/lib/format";
+import { useWishlist } from "@/lib/wishlist-context";
 import type { Order, User } from "@/lib/types";
+
+const STATUS_TONES: Record<string, BadgeTone> = {
+  pending: "warning",
+  paid: "info",
+  shipped: "primary",
+  delivered: "success",
+  cancelled: "error",
+};
 
 export default function AccountPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [orders, setOrders] = useState<Order[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { ids } = useWishlist();
 
   useEffect(() => {
     const u = getUser() as User | null;
@@ -28,46 +46,100 @@ export default function AccountPage() {
       .catch((e) => setError(e.message));
   }, [router]);
 
-  if (!user) return <Spinner />;
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <SkeletonProductGrid count={3} />
+      </div>
+    );
+  }
+
+  const totalSpent = orders?.reduce((sum, o) => sum + o.total, 0) ?? 0;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      <Breadcrumb
+        items={[{ label: "Home", href: "/" }, { label: "My account" }]}
+      />
+
+      {/* Header */}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <span className="grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-lg font-bold text-white">
             {initials(user.name)}
           </span>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">{user.name}</h1>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">
+              {user.name}
+            </h1>
             <p className="text-sm text-slate-500">{user.email}</p>
           </div>
         </div>
-        <button
-          onClick={() => {
-            clearSession();
-            router.push("/");
-          }}
-          className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
-        >
-          <LogOut className="h-4 w-4" /> Sign out
-        </button>
+        <div className="flex items-center gap-2">
+          {user.is_admin && (
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100"
+            >
+              <LayoutDashboard className="h-4 w-4" /> Admin panel
+            </Link>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10"
+            onClick={() => {
+              clearSession();
+              router.push("/");
+            }}
+          >
+            <LogOut className="h-4 w-4" /> Sign out
+          </Button>
+        </div>
       </div>
 
-      <h2 className="mt-10 text-lg font-bold text-slate-900">My orders</h2>
+      {/* Stats */}
+      <div className="mt-8 grid gap-4 sm:grid-cols-3">
+        <StatCard
+          label="Total orders"
+          value={String(orders?.length ?? 0)}
+          icon={Package}
+          tone="indigo"
+        />
+        <StatCard
+          label="Total spent"
+          value={formatPrice(totalSpent)}
+          icon={Wallet}
+          tone="emerald"
+        />
+        <StatCard
+          label="Saved items"
+          value={String(ids.size)}
+          icon={Heart}
+          tone="rose"
+          href="/wishlist"
+        />
+      </div>
+
+      {/* Orders */}
+      <h2 className="mt-10 text-lg font-bold tracking-tight text-slate-900">
+        My orders
+      </h2>
 
       {error && <p className="mt-4 text-sm text-rose-600">{error}</p>}
-      {!error && !orders && <Spinner />}
+      {!error && !orders && (
+        <div className="mt-6">
+          <SkeletonProductGrid count={3} />
+        </div>
+      )}
       {!error && orders && orders.length === 0 && (
         <div className="mt-4">
           <EmptyState
             title="No orders yet"
             subtitle="When you place an order, it will show up here."
             action={
-              <Link
-                href="/products"
-                className="mt-2 inline-block rounded-full bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
-              >
-                Start shopping
+              <Link href="/products">
+                <Button className="mt-2">Start shopping</Button>
               </Link>
             }
           />
@@ -78,7 +150,7 @@ export default function AccountPage() {
         {orders?.map((order) => (
           <div
             key={order.id}
-            className="rounded-2xl border border-slate-200 bg-white p-5"
+            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/[0.02]"
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -90,11 +162,7 @@ export default function AccountPage() {
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ${STATUS_STYLES[order.status] ?? STATUS_STYLES.pending}`}
-                >
-                  {order.status}
-                </span>
+                <Badge text={order.status} tone={STATUS_TONES[order.status] ?? "neutral"} />
                 <span className="text-sm font-bold text-slate-900">
                   {formatPrice(order.total)}
                 </span>
@@ -141,7 +209,7 @@ export default function AccountPage() {
               </p>
               <Link
                 href={`/orders/${order.id}`}
-                className="rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-4 py-1.5 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100"
               >
                 Track order
               </Link>

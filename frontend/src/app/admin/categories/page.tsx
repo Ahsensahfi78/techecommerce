@@ -5,6 +5,7 @@ import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { EmptyState, Spinner } from "@/components/ui";
+import { useToast } from "@/lib/toast-context";
 import { api, ApiError } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import type { Category } from "@/lib/types";
@@ -13,6 +14,7 @@ const inputClass =
   "w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100";
 
 export default function AdminCategoriesPage() {
+  const toast = useToast();
   const [categories, setCategories] = useState<Category[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,6 +54,7 @@ export default function AdminCategoriesPage() {
       setNewName("");
       setNewDesc("");
       load();
+      toast.success("Category created");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to create category");
     } finally {
@@ -77,6 +80,7 @@ export default function AdminCategoriesPage() {
       });
       setEditingId(null);
       load();
+      toast.success("Category updated");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to update category");
     } finally {
@@ -95,6 +99,7 @@ export default function AdminCategoriesPage() {
       });
       setConfirmId(null);
       load();
+      toast.success("Category deleted");
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Failed to delete category"
