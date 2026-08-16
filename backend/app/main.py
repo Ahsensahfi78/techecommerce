@@ -26,13 +26,13 @@ Base.metadata.create_all(bind=engine)
 
 
 def _run_lightweight_migrations() -> None:
-    """Add nullable columns to existing SQLite tables without dropping data."""
-    with engine.begin() as conn:
-        existing = {
-            row[1]
-            for row in conn.execute(text("PRAGMA table_info(products)")).fetchall()
-        }
-        if "supplier_id" not in existing:
+    """Add nullable columns to existing databases without dropping data."""
+    from sqlalchemy import inspect
+
+    inspector = inspect(engine)
+    columns = {col["name"] for col in inspector.get_columns("products")}
+    if "supplier_id" not in columns:
+        with engine.begin() as conn:
             conn.execute(
                 text("ALTER TABLE products ADD COLUMN supplier_id INTEGER")
             )
