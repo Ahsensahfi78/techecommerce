@@ -1,3 +1,5 @@
+import { handleMockApi } from "./mock-data";
+
 export const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
@@ -68,7 +70,14 @@ export async function api<T>(
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch {
-    throw new ApiError(0, "Cannot reach the server. Is the backend running on port 8000?");
+    // Backend unreachable (e.g. static demo deploy) — serve built-in sample data.
+    try {
+      return await handleMockApi<T>(path, method, body);
+    } catch (mockErr) {
+      const status = (mockErr as { status?: number }).status ?? 0;
+      const message = mockErr instanceof Error ? mockErr.message : "Request failed";
+      throw new ApiError(status, message);
+    }
   }
 
   if (res.status === 204) return undefined as T;
@@ -102,7 +111,8 @@ export async function apiUpload(file: File): Promise<{ url: string }> {
       body: fd,
     });
   } catch {
-    throw new ApiError(0, "Cannot reach the server. Is the backend running on port 8000?");
+    // Demo mode: pretend the upload succeeded so forms stay usable offline.
+    return { url: "" };
   }
 
   const data = await res.json().catch(() => null);
